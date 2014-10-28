@@ -4,7 +4,7 @@ forensic
 Conduct user defined heuristic analysis based on output information extracted by volatility plugins
 
 
-Interface for adding new heuristic rules:
+__Interface__ (for adding new heuristic rules):
 
 1) Add new rule in rules/heurictics.conf
   First block in this file is to specify rule needed to be checked and output messages.
@@ -13,7 +13,7 @@ Interface for adding new heuristic rules:
 2) Add corresponding handle function in handles/processes directory, the file name and function should be the same as the one specified in the above rules.
 
 
-Usage procedure:
+__Usage__:
 
 1) Install volatility
 
