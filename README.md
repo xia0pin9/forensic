@@ -10,7 +10,7 @@ __Interface__ (for adding new heuristic rules):
   First block in this file is to specify rule needed to be checked and output messages.
   New heuristic rule can be added in the end, rule name can be arbitraty but has to start with known category name and a dash "/", e.g., processes/similarity
 
-2) Add corresponding handle function in handles/processes directory, the file name and function should be the same as the one specified in the above rules.
+2) Add corresponding handle function in handles/processes directory, the file name and function name should be the same as the one specified in the above rules.
 
 
 __Usage__:
