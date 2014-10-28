@@ -17,6 +17,8 @@ __Usage__:
 
 1) Install volatility
 
-2) Install mongodb if you want to enable reusing volatility results, disabled by default
+2) Install mongodb if you want to enable reusing volatility results, *disabled* by default
 
-3) Specify image and start using this tool.
+3) Specify memdump image and start using this tool:
+
+    `python forensic.py -f be2.vmem`
