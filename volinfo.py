@@ -2,6 +2,7 @@ import sys
 import pprint
 import volatility.plugins.fileparam
 import volatility.conf as conf
+import volatility.debug as debug
 import volatility.registry as registry
 import volatility.commands as commands
 import volatility.addrspace as addrspace
@@ -19,16 +20,20 @@ from pymongo.errors import ConnectionFailure
 
 
 class VolInfo():
-    def __init__(self, config, *args): 
-        self.add_registry(config)
-        self._db = self.initializeDB()
-        self._processes = self.get_pslist()
-        self._threads = self.get_threadlist()
-        self._modules = self.get_modulelist()
-        self._sockets = self.get_netlist()
-        self._services = self.get_svclist()
-        self._hives = self.get_registrylist()
-        self.createDB()
+    def __init__(self, config=conf.ConfObject(), deb=debug, *args): 
+        self.add_registry(config, deb)
+        if self._config.LOCATION:
+            self._db = self.initializeDB()
+            self._processes = self.get_pslist()
+            self._threads = self.get_threadlist()
+            self._modules = self.get_modulelist()
+            self._sockets = self.get_netlist()
+            self._services = self.get_svclist()
+            self._hives = self.get_registrylist()
+            self.createDB()
+        else:
+            self._debug.error("Please specify the target image (or try -h)")
+
 
     def __del__(self):
         try:
@@ -36,36 +41,45 @@ class VolInfo():
         except AttributeError:
             pass
 
-    def add_registry(self, config):
+    def add_registry(self, config, deb):
         self._config = config #conf.ConfObject()
+        self._debug = deb
+        self._debug.setup()
         registry.PluginImporter()
         registry.register_global_options(self._config, commands.Command)
         registry.register_global_options(self._config, addrspace.BaseAddressSpace)
-        self._config.add_option("DBPATH", short_option='m', default="mongodb://localhost:27017", help='Specify mongodb connection url', action='store', type='str')
+        self._config.add_option('ENABLEDB', short_option='e', 
+                                default=False, action='store_true',
+                                help='Enable database storage for reuse purpose')   
+        self._config.add_option('DBPATH', short_option='m', default='mongodb://localhost:27017', 
+                                help='Specify mongodb connection url', 
+                                action='store', type='str')
         self._config.parse_options()
+        self._debug.setup(self._config.DEBUG)
         self._filename = self._config.FILENAME
-        self._dbname = self._config.LOCATION.split("/")[-1].split(".")[0]
-
+        
     def initializeDB(self):
         try:
-            db = MongoClient(self._config.DBPATH)
-            dbnames = db.database_names()
-            if self._dbname in dbnames:
-                print "DB %s already exist in %s" % (self._dbname, self._config.DBPATH)
-                answer = raw_input("Override existing db? [Y/n]")
-                if answer.lower() == "y":
-                    for collection in db[self._dbname].collection_names():
-                        if collection != "system.indexes":
-                            db[self._dbname].drop_collection(collection)
-                else:
-                    db.close()
-                    sys.exit(0)
-            return db
+            if self._config.ENABLEDB:
+                self._dbname = self._config.LOCATION.split("/")[-1].split(".")[0]
+                db = MongoClient(self._config.DBPATH)
+                dbnames = db.database_names()
+                if self._dbname in dbnames:
+                    print "DB %s already exist in %s" % (self._dbname, self._config.DBPATH)
+                    answer = raw_input("Override existing db? [Y/n]")
+                    if answer.lower() == "y":
+                        for collection in db[self._dbname].collection_names():
+                            if collection != "system.indexes":
+                                db[self._dbname].drop_collection(collection)
+                    else:
+                        db.close()
+                        sys.exit(0)
+                return db
+            else:
+                return None
         except ConnectionFailure:
             print "Cannot connect to mongodb at %s." % self._config.DBPATH
             sys.exit(1)
-        except:
-            raise
 
     def get_pslist(self):
         data = [p for p in filescan.PSScan(self._config).calculate()]
@@ -172,16 +186,18 @@ class VolInfo():
         pass
 
     def createDB(self):
-        self._db[self._dbname]['processes'].insert(self._processes)
-        self._db[self._dbname]['threads'].insert(self._threads)
-        self._db[self._dbname]['modules'].insert(self._modules)
-        self._db[self._dbname]['sockets'].insert(self._sockets)
-        self._db[self._dbname]['services'].insert(self._services)
-        self._db[self._dbname]['hives'].insert(self._hives)
-        print "Finish processing, db %s created" % self._dbname
+        if self._config.ENABLEDB:
+            self._db[self._dbname]['processes'].insert(self._processes)
+            self._db[self._dbname]['threads'].insert(self._threads)
+            self._db[self._dbname]['modules'].insert(self._modules)
+            self._db[self._dbname]['sockets'].insert(self._sockets)
+            self._db[self._dbname]['services'].insert(self._services)
+            self._db[self._dbname]['hives'].insert(self._hives)
+            print "Finish processing, db %s created" % self._dbname
 
 def main():
     info = VolInfo(config=conf.ConfObject()) 
+    print("Processing target image with volatility plugins finished.")
 
 if __name__ == "__main__":
     main()
