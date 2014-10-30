@@ -15,9 +15,11 @@ import volatility.plugins.evtlogs as evtlogs
 import volatility.plugins.malware.svcscan as svcscan
 import volatility.plugins.registry.hivelist as hivelist
 
-from pymongo import MongoClient
-from pymongo.errors import ConnectionFailure
-
+try:
+    from pymongo import MongoClient
+    from pymongo.errors import ConnectionFailure
+except ImportError:
+    pass
 
 class VolInfo():
     def __init__(self, config=conf.ConfObject(), deb=debug, *args): 
