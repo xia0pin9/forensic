@@ -16,6 +16,8 @@ __Interface__ (for adding new heuristic rules):
   The file name and function name should be the same as the one specified in the above rules, all the function should follow the same input and output structure. For input, the function needs to handle three parameter: info (processes, services, etc.) list, corresponding rule, output message structure. For output, the function needs to prepare approriate output message and return the message in the end. The handle function can use arbitrary key defined in the above rule, can specify output any format of message.
 
 
+
+
 __Usage__:
 
 1) Install dependency package:
