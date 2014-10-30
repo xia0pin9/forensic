@@ -15,7 +15,11 @@ __Interface__ (for adding new heuristic rules):
 
 __Usage__:
 
-1) Install volatility
+1) Install dependency package:
+   
+   volatility
+
+   conf_d
 
 2) Install mongodb if you want to enable reusing volatility results, *disabled* by default
 
