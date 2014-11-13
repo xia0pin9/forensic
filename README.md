@@ -19,14 +19,26 @@ __Interface__ (for adding new heuristic rules):
 
 __Usage__:
 
-1) Install dependency package:
-   
-    volatility (https://github.com/volatilityfoundation/volatility.git)
+1) Install volatility (https://github.com/volatilityfoundation/volatility.git)
 
-    conf_d (https://github.com/josegonzalez/python-conf_d.git)
+2) Install dependency package (conf_d):
 
-2) Install mongodb&pymongo if you want to enable reusing volatility results, *disabled* by default
+    sudo apt-get install python-pip
+    
+    sudo pip install conf_d
+or: 
+    git clone https//github.com/josegonzalez/python-conf_d.git
+    
+    cd python-conf_d
+    
+    sudo python setup.py install
 
-3) Specify memdump image and start using this tool:
+3) Install mongodb&pymongo if you want to enable reusing volatility results, it was *disabled* by default
 
+4) Get this tool and start using it:
+
+    git clone https://github.com/xia0pin9/forensic.git
+    
+    cd forensic
+    
     python forensic.py -f be2.vmem
