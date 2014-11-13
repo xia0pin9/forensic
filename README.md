@@ -17,7 +17,6 @@ __Interface__ (for adding new heuristic rules):
 
 
 
-
 __Usage__:
 
 1) Install dependency package:
