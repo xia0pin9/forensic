@@ -1,7 +1,7 @@
 forensic
 ========
 
-Conduct user defined heuristic analysis based on output information extracted by volatility plugins
+Conduct user defined heuristic analysis based on information extracted by volatility plugins
 
 
 __Interface__ (for adding new heuristic rules):
