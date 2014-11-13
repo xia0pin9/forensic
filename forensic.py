@@ -30,6 +30,8 @@ class Forensic(VolInfo):
 
     def ssplit(self, config):
         for key in config:
+            if "\"" in config[key]:
+                config[key] = config[key].split("\"", "")
             if ", " in config[key]:
                 config[key] = config[key].split(", ")
             if not isinstance(config[key], list):
@@ -70,18 +72,24 @@ class Forensic(VolInfo):
 
         # Go through the heuristic rules
         for category in heurisrules:
-            print("Analysing {0} related heuristic rule".format(category))
+            print("Analysing {0} related heuristic rules:".format(category))
             self._results[category] = []
             for rulename in heurisrules[category]:
                 modname = "handles." + category + "." + rulename
-                module = import_module(modname) 
-                funcname = getattr(module, rulename)
-                message = self.heuris['heuris'][category+'/'+rulename].replace("\"", "")
-                results = funcname(pslist, heurisrules[category][rulename], message)
-                if results:
-                    for result in results:
-                        print(result[2])
-                        # self._results[category].append(result)
+                try:
+                    module = import_module(modname) 
+                    funcname = getattr(module, rulename)
+                except ImportError:
+                    print("No module named {0}".format(modname))
+                except AttributeError:
+                    print("Module {0} has no attribute {1}".format(module, rulename))
+                else:
+                    message = self.heuris['heuris'][category+'/'+rulename].replace("\"", "")
+                    results = funcname(pslist, heurisrules[category][rulename], self._config, message)
+                    if results:
+                        for result in results:
+                            print(rulename, result)
+                            # self._results[category].append(result)
 
     def show_results(self):
         print("Heuristic Analysis Result:")

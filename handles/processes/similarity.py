@@ -1,6 +1,6 @@
 # _*_ coding: utf-8 -*-
 
-def similarity(pslist, heurisrule, message):
+def similarity(pslist, heurisrule, config, message):
     """
     Check the process similarity against whitelist in heurisrtic rule
     :param pslist:
@@ -9,16 +9,16 @@ def similarity(pslist, heurisrule, message):
     :return: heuristic rule check result for process similarity
     """
     results = []
-    for rule in heurisrule['whitelist']:
+    for targetprocess in heurisrule['whitelist']:
         for process in pslist:
             pname = process['name']
             if pname in heurisrule['whitelist']:
                 continue
-            distance = levenshtein(pname, rule)
+            distance = levenshtein(pname, targetprocess)
             if 1 <= distance <= 2:
-                name = pname + "(pid=" + pid + ")"
-                msg = message.format(name, rule)
-                results.append((pname, str(process['pid']), msg))
+                name = pname + "(pid=" +  str(process['pid']) + ")"
+                msg = message.format(name, targetprocess)
+                results.append(msg)
     return results
 
 def levenshtein(s1, s2):

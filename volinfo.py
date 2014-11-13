@@ -12,6 +12,7 @@ import volatility.plugins.filescan as filescan
 import volatility.plugins.modscan as modscan
 import volatility.plugins.sockscan as sockscan
 import volatility.plugins.evtlogs as evtlogs
+import volatility.plugins.taskmods as taskmods
 import volatility.plugins.malware.svcscan as svcscan
 import volatility.plugins.registry.hivelist as hivelist
 
@@ -32,6 +33,7 @@ class VolInfo():
             self._sockets = self.get_netlist()
             self._services = self.get_svclist()
             self._hives = self.get_registrylist()
+            # self._dlls = self.get_dlllist()
             self.createDB()
         else:
             self._debug.error("Please specify the target image (or try -h)")
@@ -85,16 +87,29 @@ class VolInfo():
 
     def get_pslist(self):
         data = [p for p in filescan.PSScan(self._config).calculate()]
+        tasks = [t for t in taskmods.DllList(self._config).calculate()]
         pslist = []
         for process in data:
             ps = {}
-            # pprint.pprint(vars(process))
-            ps['offset'] = int(process.obj_offset)
             ps['name'] = str(process.ImageFileName)
             ps['pid'] = int(process.UniqueProcessId)
             ps['ppid'] = int(process.InheritedFromUniqueProcessId)
-            ps['sessionid'] = int(process.Session)
-            ps['createtime'] = str(process.CreateTime)
+            ps['createtime'] = str(process.CreateTime) or ''
+            # ps['exittime'] = str(process.ExitTime) or ''
+            hidden = True 
+            for task in tasks:
+                if int(task.UniqueProcessId) == ps['pid']:
+                    ps['envs'] = {} 
+                    ps['dlls'] = []
+                    ps['sessionid'] = int(task.SessionId)
+                    for [key, value] in [x for x in task.environment_variables()]:
+                        ps['envs'][key] = value
+                    for m in task.get_load_modules():
+                        ps['dlls'].append(str(m.FullDllName or ''))
+                    hidden = False
+            if hidden:
+                ps['sessionid'] = -1
+            # print ps
             pslist.append(ps)
         return pslist
 
@@ -113,15 +128,33 @@ class VolInfo():
             threads.append(thrd)
         return threads
 
+    def get_dlllist(self):
+        data = [d for d in taskmods.DllList(self._config).calculate()]
+        pslist = self.get_pslist()
+        dlls = []
+        for task in data:
+            # if int(task.UniqueProcessId) == 1572:
+            # print "Test",task.UniqueProcessId, len(data), int(task.Session), int(task.SessionId) # , len(pslist)
+            if [x for x in task.environment_variables()] != []:
+                pprint.pprint(vars(task))
+                print "Test", task.UniqueProcessId, len(data), task.Session, task.SessionId # , len(pslist)
+                print([x for x in task.environment_variables()])
+                # print(task.get_init_modules())
+                #print(dir(task))
+                sys.exit()
+                pass
+        return dlls
+
     def get_modulelist(self):
         data = [m for m in modscan.ModScan(self._config).calculate()]
         modules = []
         for module in data:
             # pprint.pprint(vars(module))
             mod = {}
-            mod['fulldllname'] = str(module.FullDllName)
+            mod['fulldllname'] = str(module.FullDllName or '')
             mod['sizeofimage'] = int(module.SizeOfImage)
-            mod['checksum'] = str(module.CheckSum)
+            mod['basedllname'] = str(module.BaseDllName or '')
+            mod['dllbase'] = int(module.DllBase)
             modules.append(mod)
         return modules
 
@@ -182,10 +215,6 @@ class VolInfo():
             evt = {}
             events.append(evt)
         return events
-
-    def get_dlllist(self):
-        data = []
-        pass
 
     def createDB(self):
         if self._config.ENABLEDB:
