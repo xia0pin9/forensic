@@ -27,6 +27,7 @@ __Usage__:
     
     sudo pip install conf_d
 or: 
+
     git clone https//github.com/josegonzalez/python-conf_d.git
     
     cd python-conf_d
