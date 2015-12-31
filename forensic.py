@@ -2,6 +2,7 @@
 import os
 import sys
 import importlib
+import subprocess
 
 import volatility.conf as conf
 import volatility.debug as debug
@@ -25,8 +26,10 @@ class Forensic(VolInfo):
                                     path=self._config.HEURISPATH,
                                     section_parser=self.ssplit).raw()
         self._results = {}
-        self.check_heuris()
+        # self.check_heuris()
         # self.show_results()
+        # self.edit_heuris()
+        self.start_shell()
 
     def ssplit(self, config):
         for key in config:
@@ -72,7 +75,7 @@ class Forensic(VolInfo):
 
         # Go through the heuristic rules
         for category in heurisrules:
-            print("Analysing {0} related heuristic rules:".format(category))
+            print("Analyzing {0} related heuristic rules:".format(category))
             self._results[category] = []
             for rulename in heurisrules[category]:
                 modname = "handles." + category + "." + rulename
@@ -97,6 +100,63 @@ class Forensic(VolInfo):
             for result in self._results[category]:
                 print(result[2])
 
+    def start_shell(self):
+        def sh(self):
+            """Opens current heuris.conf in default text editor"""
+            cpath = self._config.HEURISPATH
+            if sys.platform.startswith('darwin'):
+                subprocess.call(('open', cpath))
+                # subprocess.call(['nano', cpath])
+            elif os.name == 'nt':
+                os.startfile(cpath)
+            elif os.name == 'posix':
+                subprocess.call(('xdg-open', cpath))
+
+        shell_funcs = {'sh':sh}     # TODO: list available commands
+
+        def hh(cmd = None):
+            import pydoc
+            from inspect import getargspec, formatargspec
+            if not cmd:
+                print "\nAvailable commands:"
+                for f in sorted(shell_funcs):
+                    doc = pydoc.getdoc(shell_funcs[f])
+                    synop, _full = pydoc.splitdoc(doc)
+                    print "\t{0:20} : {1}".format(f + formatargspec(*getargspec(shell_funcs[f])), synop)
+                print "\nFor help on a specific command, type 'hh(<command>)'"
+            elif type(cmd) == str:
+                try:
+                    doc = pydoc.getdoc(shell_funcs[cmd])
+                except KeyError:
+                    print "No such command: {0}".format(cmd)
+                    return
+                print doc
+            else:
+                doc = pydoc.getdoc(cmd)
+                print doc
+
+        banner = "Welcome to volshell! \n\t Current memory image is: {0}\n".format(self._config.LOCATION)
+        print (banner)
+
+        # Attempt IPython (both old and new) with tab completion
+        try:
+            import IPython
+            try:
+                IPython.embed()
+            except AttributeError:
+                shell = IPython.Shell.IPShellEmbed([], banner = banner)
+                shell()
+        except (AttributeError, ImportError):
+            import code, inspect
+            frame = inspect.currentframe()
+            try:
+                import rlcompleter, readline
+                readline.parse_and_bind("tab: complete")
+            except ImportError:
+                pass
+            namespace = frame.f_globals.copy()
+            namespace.update(frame.f_locals)
+            code.interact(banner = banner, local = namespace)
 
 def main():
     forensic = Forensic(config=conf.ConfObject())
